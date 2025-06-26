@@ -200,6 +200,23 @@ public:
           the_i = i;
         }
       }
+    //  int l1matched( vector<Object>& objects, vector<int>& map, double dR_match = 0.1, double dpt_match = 1.e9 ) {
+    //   bool found     = false;
+    //   double the_dR  = dR_match;
+    //   int the_i = -1e9;
+
+    //   unsigned n = objects.size();
+    //   for(unsigned i=0; i<n; ++i) {
+    //     if( map[i] > 0 )  continue;
+
+    //     double dR  = this->getvec("l1tdr").at(i);
+    //     double dpt = fabs( this->pt - objects.at(i).pt ) / this->pt;
+    //     if( (dR < the_dR) && (dpt < dpt_match) ) {
+    //       found = true;
+    //       the_dR = dR;
+    //       the_i = i;
+    //     }
+    //   }
 
       if(found) {
         map[the_i] = 1;
@@ -223,6 +240,33 @@ public:
 
       return found;
     }
+    int L1matched( vector<Object>& objects, vector<int>& map, double dR_match = 0.1, double dpt_match = 1.e9 ) {//custom deft 0,1
+      bool found     = false;
+      double the_dR  = dR_match;
+      int the_i = -1e9;
+
+      unsigned n = objects.size();
+      for(unsigned i=0; i<n; ++i) {
+        if( map[i] > 0 )  continue;
+
+        double dR  = deltaR( objects.at(i) );
+        //custom
+        //double dR  = this->getvec("l1tdr").at(i);
+        double dpt = fabs( this->pt - objects.at(i).pt ) / this->pt;
+        if(  dpt < dpt_match ) {
+        //if( (dR < the_dR) && (dpt < dpt_match) ) {
+          found = true;
+          the_dR = dR;
+          the_i = i;
+        }
+      }
+
+      if(found) {
+        map[the_i] = 1;
+      }
+
+      return the_i;
+    }
 
     bool l1matched( double ptcut = 22.0, double qualcut = 11 ) {
       bool found     = false;
@@ -230,8 +274,8 @@ public:
       int nl1t = this->get("nl1t");
       for(unsigned i=0; i<(unsigned)nl1t; ++i) {
         double pt  = this->getvec("l1tpt").at(i);
-        double eta  = this->getvec("l1teta").at(i);
-        double phi  = this->getvec("l1tphi").at(i);
+        double eta  = this->getvec("l1tpropeta").at(i);
+        double phi  = this->getvec("l1tpropphi").at(i);
         double charge = this->getvec("l1tcharge").at(i);
         double qual  = this->getvec("l1tq").at(i);
         double dR  = this->getvec("l1tdr").at(i);
@@ -496,7 +540,9 @@ public :
         Int_t           muon_nl1t[ArrSize];   //[nMuon]
         vector<vector<double>>  *muon_l1tpt;
         vector<vector<double>>  *muon_l1teta;
+        vector<vector<double>>  *muon_l1tpropeta;
         vector<vector<double>>  *muon_l1tphi;
+        vector<vector<double>>  *muon_l1tpropphi;
         vector<vector<double>>  *muon_l1tcharge;
         vector<vector<double>>  *muon_l1tq;
         vector<vector<double>>  *muon_l1tdr;
@@ -1580,6 +1626,7 @@ public :
         vector<double>  *tpTo_hltGlbTrkMuonTracksAssociated_bestMatchTrk_normalizedChi2;
         vector<double>  *tpTo_hltGlbTrkMuonTracksAssociated_bestMatchTrk_quality;
         vector<int>     *tpTo_hltGlbTrkMuonTracksAssociated_bestMatchTrk_NValidHits;
+        int hi_cBin;
 
     // -- branches
         TBranch        *b_isRealData;   //!
@@ -1741,7 +1788,9 @@ public :
         TBranch        *b_muon_nl1t;   //!
         TBranch        *b_muon_l1tpt;   //!
         TBranch        *b_muon_l1teta;   //!
+        TBranch        *b_muon_l1tpropeta;   //!
         TBranch        *b_muon_l1tphi;   //!
+        TBranch        *b_muon_l1tpropphi;   //!
         TBranch        *b_muon_l1tcharge;   //!
         TBranch        *b_muon_l1tq;   //!
         TBranch        *b_muon_l1tdr;   //!
@@ -2822,6 +2871,7 @@ public :
         TBranch        *b_tpTo_hltGlbTrkMuonTracksAssociated_bestMatchTrk_normalizedChi2;   //!
         TBranch        *b_tpTo_hltGlbTrkMuonTracksAssociated_bestMatchTrk_quality;   //!
         TBranch        *b_tpTo_hltGlbTrkMuonTracksAssociated_bestMatchTrk_NValidHits;   //!
+        TBranch        *b_hi_cBin;
 };
 
 void MuonHLTNtupleRun3::PrintTemplate( TString head )
@@ -2946,6 +2996,8 @@ vector<Object> MuonHLTNtupleRun3::get_offlineMuons()
         obj.addVar( "l1pt", muon_l1pt[i] );
         obj.addVar( "l1eta", muon_l1eta[i] );
         obj.addVar( "l1phi", muon_l1phi[i] );
+        obj.addVar( "l1eta", muon_l1eta[i] );
+        obj.addVar( "l1phi", muon_l1phi[i] );
         obj.addVar( "l1charge", muon_l1charge[i] );
         obj.addVar( "l1q", muon_l1q[i] );
         obj.addVar( "l1dr", muon_l1dr[i] );
@@ -2959,7 +3011,9 @@ vector<Object> MuonHLTNtupleRun3::get_offlineMuons()
         obj.addVar( "nl1t", muon_nl1t[i] );
         obj.addVec( "l1tpt", muon_l1tpt->at(i) );
         obj.addVec( "l1teta", muon_l1teta->at(i) );
+        obj.addVec( "l1tpropeta", muon_l1tpropeta->at(i) );
         obj.addVec( "l1tphi", muon_l1tphi->at(i) );
+        obj.addVec( "l1tpropphi", muon_l1tpropphi->at(i) );
         obj.addVec( "l1tcharge", muon_l1tcharge->at(i) );
         obj.addVec( "l1tq", muon_l1tq->at(i) );
         obj.addVec( "l1tdr", muon_l1tdr->at(i) );
@@ -3519,11 +3573,11 @@ vector<Object> MuonHLTNtupleRun3::get_HLTObjects( TString filter )
             continue;
 
         Object obj = Object( vec_HLTObj_pt->at(i), vec_HLTObj_eta->at(i), vec_HLTObj_phi->at(i) );
-
         obj.addStrVar( "filter", ifilter );
         obj.addVar( "pt", vec_HLTObj_pt->at(i) );
         obj.addVar( "eta", vec_HLTObj_eta->at(i) );
         obj.addVar( "phi", vec_HLTObj_phi->at(i) );
+        
 
         out.push_back(obj);
     }
@@ -4838,7 +4892,9 @@ void MuonHLTNtupleRun3::Init(TChain *tree)
     // Set object pointer
     muon_l1tpt = 0;
     muon_l1teta = 0;
+    muon_l1tpropeta = 0;
     muon_l1tphi = 0;
+    muon_l1tpropphi = 0;
     muon_l1tcharge = 0;
     muon_l1tq = 0;
     muon_l1tdr = 0;
@@ -5667,6 +5723,7 @@ void MuonHLTNtupleRun3::Init(TChain *tree)
     tpTo_hltGlbTrkMuonTracksAssociated_bestMatchTrk_normalizedChi2 = 0;
     tpTo_hltGlbTrkMuonTracksAssociated_bestMatchTrk_quality = 0;
     tpTo_hltGlbTrkMuonTracksAssociated_bestMatchTrk_NValidHits = 0;
+    hi_cBin=0;
 
     // Set branch addresses and branch pointers
     if (!tree) return;
@@ -5833,7 +5890,9 @@ void MuonHLTNtupleRun3::Init(TChain *tree)
     fChain->SetBranchAddress("muon_nl1t", muon_nl1t, &b_muon_nl1t);
     fChain->SetBranchAddress("muon_l1tpt", &muon_l1tpt, &b_muon_l1tpt);
     fChain->SetBranchAddress("muon_l1teta", &muon_l1teta, &b_muon_l1teta);
+    fChain->SetBranchAddress("muon_l1tpropeta", &muon_l1tpropeta, &b_muon_l1tpropeta);
     fChain->SetBranchAddress("muon_l1tphi", &muon_l1tphi, &b_muon_l1tphi);
+    fChain->SetBranchAddress("muon_l1tpropphi", &muon_l1tpropphi, &b_muon_l1tpropphi);
     fChain->SetBranchAddress("muon_l1tcharge", &muon_l1tcharge, &b_muon_l1tcharge);
     fChain->SetBranchAddress("muon_l1tq", &muon_l1tq, &b_muon_l1tq);
     fChain->SetBranchAddress("muon_l1tdr", &muon_l1tdr, &b_muon_l1tdr);
@@ -6802,6 +6861,7 @@ void MuonHLTNtupleRun3::Init(TChain *tree)
     fChain->SetBranchAddress("tpTo_hltPixelTracksInRegionL1Associated_bestMatchTrk_normalizedChi2", &tpTo_hltPixelTracksInRegionL1Associated_bestMatchTrk_normalizedChi2, &b_tpTo_hltPixelTracksInRegionL1Associated_bestMatchTrk_normalizedChi2);
     fChain->SetBranchAddress("tpTo_hltPixelTracksInRegionL1Associated_bestMatchTrk_quality", &tpTo_hltPixelTracksInRegionL1Associated_bestMatchTrk_quality, &b_tpTo_hltPixelTracksInRegionL1Associated_bestMatchTrk_quality);
     fChain->SetBranchAddress("tpTo_hltPixelTracksInRegionL1Associated_bestMatchTrk_NValidHits", &tpTo_hltPixelTracksInRegionL1Associated_bestMatchTrk_NValidHits, &b_tpTo_hltPixelTracksInRegionL1Associated_bestMatchTrk_NValidHits);
+    fChain->SetBranchAddress("hi_cBin", &hi_cBin, &b_hi_cBin);
 
 
     // fChain->SetBranchAddress("nhltPixelTracksForSeedsL3MuonAssociated", &nhltPixelTracksForSeedsL3MuonAssociated, &b_nhltPixelTracksForSeedsL3MuonAssociated);
@@ -6923,6 +6983,7 @@ void MuonHLTNtupleRun3::Init(TChain *tree)
     // fChain->SetBranchAddress("tpTo_hltGlbTrkMuonTracksAssociated_bestMatchTrk_normalizedChi2", &tpTo_hltGlbTrkMuonTracksAssociated_bestMatchTrk_normalizedChi2, &b_tpTo_hltGlbTrkMuonTracksAssociated_bestMatchTrk_normalizedChi2);
     // fChain->SetBranchAddress("tpTo_hltGlbTrkMuonTracksAssociated_bestMatchTrk_quality", &tpTo_hltGlbTrkMuonTracksAssociated_bestMatchTrk_quality, &b_tpTo_hltGlbTrkMuonTracksAssociated_bestMatchTrk_quality);
     // fChain->SetBranchAddress("tpTo_hltGlbTrkMuonTracksAssociated_bestMatchTrk_NValidHits", &tpTo_hltGlbTrkMuonTracksAssociated_bestMatchTrk_NValidHits, &b_tpTo_hltGlbTrkMuonTracksAssociated_bestMatchTrk_NValidHits);
+    
 
     Notify();
 }

@@ -252,10 +252,12 @@ bool offlineSel(Object obj)
 {
     bool out = (
         acceptance(obj) &&
-        obj.get("isTight") //options: isTight, isMedium, isLoose, isSoft(empty in the ntuple?)
+        // obj.get("isTight") && //options: isTight, isMedium, isLoose, isSoft(empty in the ntuple?)
+        obj.get("isLoose") && //options: isTight, isMedium, isLoose, isSoft(empty in the ntuple?)
         //obj.get("relPFIso") < 0.15 //for pp (definition in "MuonHLTNtupleRun3.h")
         //obj.get("isHighPtNew") &&
         //obj.get("relTrkIso") < 0.10
+        true
     );
     return out;
 }
@@ -271,6 +273,8 @@ void HLTEffAnalyzer(
     Int_t maxEv = -1, bool doMem = false, int nMem = 10001, bool doBar = true  // HERE
     // Int_t maxEv = -1, bool doMem = false, int nMem = 10001, bool doBar = false
 ) {
+  int nthreads = 4;
+  ROOT::EnableImplicitMT(nthreads);
     TH1::SetDefaultSumw2(kTRUE);
     TH2::SetDefaultSumw2(kTRUE);
     TH1::AddDirectory(kFALSE);
@@ -287,13 +291,15 @@ void HLTEffAnalyzer(
       // 730k events: /eos/cms/store/group/phys_heavyions/soohwan/Run3_2023/./PostRunHLT/TriggerStudy_Run375754_DetailedForMu_PbPb2023_CMSSW_13_2_6_patch2_soohwan_09Nov2023_v1/ntuple.root
       // 788k events: /eos/cms/store/group/phys_heavyions/soohwan/Run3_2023/PostRunHLT/MuonHLTRunBefore_21Nov2023_v4.root
       // 1.4M events: /eos/cms/store/group/phys_heavyions/soohwan/Run3_2023/PostRunHLT/MuonHLTRunAfter_20Nov2023_v4.root
-      paths = { "./MuonHLTRunAfter_20Nov2023_v4.root" };
+    // paths = {"./ntuple_ppRef_JPsi_pThat2_PU4_140X_mcRun3_2024_realistic_ForHITracking_v1_HLTDilepton_Final.root"};
+    // paths = {"/home/bayuadinp/trigger/HLT/ntuple_SmallSystem_2K.root"};
+    paths = {"ntuple_coherent.root"};
     }
 
     // -- Output
     TString fileName = TString::Format( "hist-%s-%s", ver.Data(), tag.Data() );
     if(JobId != "")  fileName = fileName + TString::Format("--%s", JobId.Data());
-    TFile *f_output = TFile::Open(outputDir+fileName+"-Eff_2023PbPb_1.4M.root", "RECREATE"); // output name
+    TFile *f_output = TFile::Open(outputDir+fileName+"-Eff_2025OO_Coherent.root", "RECREATE"); // output name
 
     // -- Event chain
     TChain *_chain_Ev          = new TChain("ntupler/ntuple");
@@ -304,6 +310,7 @@ void HLTEffAnalyzer(
     cout << endl;
 
     unsigned nEvent      = _chain_Ev->GetEntries();
+    // unsigned nEvent      = 100000;
     if(maxEv >= 0)  nEvent = maxEv;
     cout << "\t nEvent: " << nEvent << endl;
 
@@ -357,6 +364,7 @@ void HLTEffAnalyzer(
 
         "hltIterL3GlbMuonTrackAssociated", // Br 1118 - 1152
         "tpTo_hltIterL3GlbMuonTrackAssociated", // Br 1153 - 1189
+        // "hi_cBin"
     };
 
     unique_ptr<MuonHLTNtupleRun3>  nt( new MuonHLTNtupleRun3( _chain_Ev, branch_tags ) );
@@ -365,19 +373,19 @@ void HLTEffAnalyzer(
     TH1D *h_nEvents = new TH1D("h_nEvents",  "", 3, -1, 2);
     TH1D *h_nRuns = new TH1D("h_nRuns",  "", 100, 350000, 400000);
 
-    TH1D *h_gen_pt  = new TH1D("h_gen_pt",  "", 1000, 0, 1000);
+    TH1D *h_gen_pt  = new TH1D("h_gen_pt",  "", 40, 0, 20);
     TH1D *h_gen_eta = new TH1D("h_gen_eta", "", 60, -3, 3);
     TH1D *h_gen_phi = new TH1D("h_gen_phi", "", 64, -3.2, 3.2);
 
-    TH1D *h_gen_acc_pt  = new TH1D("h_gen_acc_pt",  "", 1000, 0, 1000);
+    TH1D *h_gen_acc_pt  = new TH1D("h_gen_acc_pt",  "", 40, 0, 20);
     TH1D *h_gen_acc_eta = new TH1D("h_gen_acc_eta", "", 60, -3, 3);
     TH1D *h_gen_acc_phi = new TH1D("h_gen_acc_phi", "", 64, -3.2, 3.2);
 
-    TH1D *h_gen_hard_pt  = new TH1D("h_gen_hard_pt",  "", 1000, 0, 1000);
+    TH1D *h_gen_hard_pt  = new TH1D("h_gen_hard_pt",  "", 40, 0, 20);
     TH1D *h_gen_hard_eta = new TH1D("h_gen_hard_eta", "", 60, -3, 3);
     TH1D *h_gen_hard_phi = new TH1D("h_gen_hard_phi", "", 64, -3.2, 3.2);
 
-    TH1D *h_gen_hard_acc_pt  = new TH1D("h_gen_hard_acc_pt",  "", 1000, 0, 1000);
+    TH1D *h_gen_hard_acc_pt  = new TH1D("h_gen_hard_acc_pt",  "", 40, 0, 20);
     TH1D *h_gen_hard_acc_eta = new TH1D("h_gen_hard_acc_eta", "", 60, -3, 3);
     TH1D *h_gen_hard_acc_phi = new TH1D("h_gen_hard_acc_phi", "", 64, -3.2, 3.2);
             
@@ -414,7 +422,17 @@ void HLTEffAnalyzer(
         // -- paths        
         "L3SingleMu3_Open",
         "L3SingleMu5", 
-        "L3SingleMu12"
+        "L3SingleMu12",
+        "L1DoubleMu0SQCent40to100",
+        "L1SingleMuOpenBptxAND",
+        "L1SingleMu0BptxAND",
+        "L1SingleMu3BptxAND",
+        "L1SingleMu5BptxAND",
+        "L1SingleMu7BptxAND",
+        "L1SingleMu0SQCent40to100BptxAND",
+        "L1SingleMuOpenSQCent40to100BptxAND",
+        "HLTOxySingleMuOpen_NotMBHF2AND",
+        "HLTOxyL1SingleMu0"
     };
 
     vector<TString> HLTpaths = {
@@ -422,6 +440,8 @@ void HLTEffAnalyzer(
         "L3SingleMu3_Open",
         "L3SingleMu5"
         "L3SingleMu12"
+        "HLT_OxySingleMuOpen_NotMBHF2AND_v1",
+        "HLT_OxyL1SingleMu0_v1"
     };
 
         // -- a part of the filter names and HLT paths in PbPb HLT menu
@@ -479,14 +499,14 @@ void HLTEffAnalyzer(
     // -- Efficiency
     vector<double> Eff_genpt_mins = {
         0,
-        2,
-        4,
-        6,
-        8,
-        10,
-        12,
-        15,
-        20
+        3,
+        5,
+        7,
+        // 8,
+        // 10,
+        // 12,
+        // 15,
+        // 20
         // 16,
         // 26,
         // 30,
@@ -759,13 +779,23 @@ void HLTEffAnalyzer(
         vector<Object> IterL3SingleMuOpen_MYHLT = nt->get_myHLTObjects("hltL1fForIterL3L1fL1sSingleMuOpenL1Filtered0");
         vector<Object> IterL3SingleMu3_MYHLT = nt->get_myHLTObjects("hltL1fForIterL3L1fL1sSingleMu3L1Filtered0"); 
         vector<Object> L1sSingleMu7_MYHLT = nt->get_myHLTObjects("hltL1fL1sSingleMu7L1Filtered0");
+        vector<Object> L1sDoubleMu0SQCent40to100_MYHLT                 = nt->get_myHLTObjects("hltL1fL1sDoubleMu0SQCent40to100L1Filtered0");
+        vector<Object> L1SingleMuOpenBptxAND_MYHLT                     =nt->get_myHLTObjects("hltL1fL1sSingleMuOpenL1Filtered0");
+        vector<Object> L1SingleMu0BptxAND_MYHLT                        =nt->get_myHLTObjects("hltL1fL1sSingleMu0L1Filtered0");
+        vector<Object> L1SingleMu3BptxAND_MYHLT                        =nt->get_myHLTObjects("hltL1fL1sSingleMu3L1Filtered0");
+        vector<Object> L1SingleMu5BptxAND_MYHLT                        =nt->get_myHLTObjects("hltL1fL1sSingleMu5L1Filtered0");
+                vector<Object> HLTOxySingleMuOpenNotMBHF2AND_MYHLT = nt->get_myHLTObjects("hltL1sSingleMuOpenNotMBHF2AND");
+        vector<Object> HLTOxyL1SingleMu0_MYHLT = nt->get_myHLTObjects("hltL1sSingleMu0BptxAND");
+        vector<Object> L1SingleMu7BptxAND_MYHLT                       =nt->get_myHLTObjects("hltL1fL1sSingleMu7L1Filtered0");
+        vector<Object> L1SingleMu0SQCent40to100BptxAND_MYHLT     =nt->get_myHLTObjects("hltL1fL1sSingleMuSQCent40to10L1Filtered0");
+        vector<Object> L1SingleMuOpenSQCent40to100BptxAND_MYHLT =nt->get_myHLTObjects("hltL1fL1sSingleMuSQOpenCent40to10L1Filtered0");
 
         // -- TnP selection
         vector<Object> muons = nt->get_offlineMuons(); //get muons' information (in the Ntuple, muon_* )
         vector<Object> probes = {};        
         // tag
         for (auto & i_mu : muons) {
-            if (i_mu.pt < 2.) continue;
+            if (i_mu.pt < 0.) continue;
 
             if (!offlineSel(i_mu)) continue;
 
@@ -820,7 +850,22 @@ void HLTEffAnalyzer(
         // -- paths (match one of the filter names that the path contains)       
             &IterL3SingleMuOpen_MYHLT,  
             &IterL3SingleMu3_MYHLT, 
-            &L1sSingleMu7_MYHLT 
+            &L1sSingleMu7_MYHLT,
+            &L1sDoubleMu0SQCent40to100_MYHLT,
+            &L1SingleMuOpenBptxAND_MYHLT,                   
+            &L1SingleMu0BptxAND_MYHLT,                      
+            &L1SingleMu3BptxAND_MYHLT,                      
+            &L1SingleMu5BptxAND_MYHLT,                      
+            &L1SingleMu7BptxAND_MYHLT,                     
+            &L1SingleMu0SQCent40to100BptxAND_MYHLT,   
+            &L1SingleMuOpenSQCent40to100BptxAND_MYHLT,
+            &HLTOxySingleMuOpenNotMBHF2AND_MYHLT,
+            &HLTOxyL1SingleMu0_MYHLT //HLTOxyL1SingleMu0
+
+
+
+
+            
         };
 
         if (L3types.size() != L3MuonColls.size()) {
@@ -838,10 +883,14 @@ void HLTEffAnalyzer(
 
             L3type.ReplaceAll("my","");
             bool looseMatch = L3type.Contains("L2Muon");
+            
             // cout << "looseMatchBool: " << looseMatch << endl;
 
             // -- Efficiency
             for (unsigned irun = 0; irun < Runs_bin.size(); ++irun) {
+            if(L3type.Contains("Cent")&& nt->hi_cBin < 80 ){
+              continue;
+            }
 
                 if (nt->runNum < Runs_bin.at(irun).at(0)) continue;
                 if (nt->runNum > Runs_bin.at(irun).at(1)) continue;
@@ -855,6 +904,7 @@ void HLTEffAnalyzer(
                         // --select mu in the acceptance 
                         // (isn't this repetition already done in the offline selection?)
                         if( !acceptance( probemu ) ) continue;
+
 
                         // --select eta in one bin
                         if (Etas_bin.at(ieta).at(0) > abs(probemu.eta)) continue;
@@ -969,6 +1019,62 @@ void HLTEffAnalyzer(
                              L3type.Contains("L3SingleMu12")
                         ) {
                           if (nt->path_myFired("HLT_HIL3SingleMu12_v3")) matched_idx = probemu.matched( *L3Coll, L3map, 0.3 );
+                        }
+                        else if (
+                             L3type.Contains("L1DoubleMu0SQCent40to100")
+                        ) {
+                          if (nt->path_myFired("HLT_HIL1DoubleMu0_SQ_Centrality40to100_v1")) matched_idx = probemu.matched( *L3Coll, L3map, 0.3 );
+                        }
+                        else if (
+                             L3type.Contains("L1SingleMuOpenBptxAND")
+                        ) {
+                          if (nt->path_myFired("HLT_HIL1SingleMu0_Open_v5")) matched_idx = probemu.matched( *L3Coll, L3map, 0.3 );
+                        }
+                        else if (
+                             L3type.Contains("L1SingleMu0BptxAND")
+                        ) {
+                          if (nt->path_myFired("HLT_HIL1SingleMu0_v5")) matched_idx = probemu.matched( *L3Coll, L3map, 0.3 );
+                        }
+                        else if (
+                             L3type.Contains("L1SingleMu3BptxAND")
+                        ) {
+                          if (nt->path_myFired("HLT_HIL1SingleMu3_v1")) matched_idx = probemu.matched( *L3Coll, L3map, 0.3 );
+                        }
+                        else if (
+                             L3type.Contains("L1SingleMu5BptxAND")
+                        ) {
+                          if (nt->path_myFired("HLT_HIL1SingleMu5_v1")) matched_idx = probemu.matched( *L3Coll, L3map, 0.3 );
+                        }
+                        else if (
+                             L3type.Contains("L1SingleMu7BptxAND")
+                        ) {
+                          if (nt->path_myFired("HLT_HIL1SingleMu7_v1")) matched_idx = probemu.matched( *L3Coll, L3map, 0.3 );
+                        }
+                        else if (
+                             L3type.Contains("L1SingleMu0SQCent40to100BptxAND")
+                        ) {
+                          if (nt->path_myFired("HLT_HIL1SingleMu0_SQ_Centrality40to100v1")) matched_idx = probemu.matched( *L3Coll, L3map, 0.3 );
+                        }
+                        else if (
+                             L3type.Contains("L1SingleMuOpenSQCent40to100BptxAND")
+                        ) {
+                          if (nt->path_myFired("HLT_HIL1SingleMuOpen_SQ_Centrality40to100_v1")) matched_idx = probemu.matched( *L3Coll, L3map, 0.3 );
+                        }
+                                                else if (
+                             L3type.Contains("HIL1SingleMu0_Centrality40to100")
+                        ) {
+                          if (nt->path_myFired("HLT_HIL1SingleMu0_Centrality40to100_v1")) matched_idx = probemu.matched( *L3Coll, L3map, 0.3 );
+                        }                        else if (
+                          L3type.Contains("HLTOxyL1SingleMu0")
+                        ){
+                          if (nt->path_myFired("HLT_OxyL1SingleMu0_v1")) matched_idx = probemu.L1matched( *L3Coll, L3map, 0.3 );
+                          // if (nt->path_myFired("HLT_OxyL1SingleMu0_v1")) matched_idx = 1;
+                        }
+                         else if (
+                          L3type.Contains("HLTOxySingleMuOpen_NotMBHF2AND")
+                        ){
+                          if (nt->path_myFired("HLT_OxySingleMuOpen_NotMBHF2AND_v1")) matched_idx = probemu.L1matched( *L3Coll, L3map, 0.3 );
+                          // if (nt->path_myFired("HLT_OxySingleMuOpen_NotMBHF2AND_v1")) matched_idx = 1;
                         }
                         else {
                             matched_idx = looseMatch ? probemu.matched( *L3Coll, L3map, 0.3 ) :  // L2 muon

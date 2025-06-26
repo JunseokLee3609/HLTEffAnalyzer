@@ -39,10 +39,10 @@ void printRunTime(TStopwatch timer_)
 
 void drawtnpCompEffL3wrtL1(
   // The efftag must match the L1Type in "HLTEffAnalyzer.C"
-  TString efftag = "hltL3Merged", TString ver = "vRun3_01", TString SAMPLE = "Run2023", TString tag = "Muon",
+  TString efftag = "HLTOxySingleMuOpen_NotMBHF2AND", TString ver = "vRun3_01", TString SAMPLE = "Run2025", TString tag = "Muon",
   // TString efftag = "L3SingleMu12", TString ver = "vRun3_01", TString SAMPLE = "Run2023", TString tag = "Muon",
   // TString efftag2 = "L3SingleMu3_Open", TString ver2 = "vRun3_01", TString SAMPLE2 = "Run2023", TString tag2 = "Muon",
-  TString L1tag = "L1DQ2", TString L1str = "L1 qual > 7, p_{T}^{L1} > 2 GeV",
+  TString L1tag = "L1SQ0", TString L1str = "L1 qual > 7, p_{T}^{L1} > 2 GeV",
   bool isLogy = false  // HERE
 ) {
   TStopwatch timer_total;
@@ -57,7 +57,7 @@ void drawtnpCompEffL3wrtL1(
 
   vector<TString> v_var = {"pt_zoom", "pt", "eta", "phi", "nvtx"};//, "pu"};
   vector< vector<double> > range = {
-    {1, 0, 12},  // pt zoom
+    {1, 0, 3},  // pt zoom
     {1, 0, 20},  // pt
     {1, -2.4, 2.4},  // eta
     {1, -TMath::Pi(), TMath::Pi()},
@@ -70,13 +70,19 @@ void drawtnpCompEffL3wrtL1(
     range.at(1) = {1, 0, 40};
   }
 
-  const int n_pt_bins = 11-1;
+  const int n_pt_bins = 12-1;
+  // double pt_bins[n_pt_bins+1] = {
+  //   0,0.25,0.5,0.75, 1, 1.5, 2, 3, 
+  //   4, 6, 8, 12, 16, 
+  //   20
+  //   /*, 22, 23, 26, 30*/
+  // };
   double pt_bins[n_pt_bins+1] = {
-    0, 1, 1.5, 2, 3, 
-    4, 6, 8, 12, 16, 
-    20
+    0,0.2,0.4,0.6,0.8, 1,1.2,1.4, 1.6,1.8, 2, 3
     /*, 22, 23, 26, 30*/
   };
+
+
 
   const int n_eta_bins = 22-1;
   double eta_bins[n_eta_bins+1] = {
@@ -117,8 +123,9 @@ void drawtnpCompEffL3wrtL1(
   };
   // -- input file names
   vector<TString> files = {
-    "../Analyzer/hist-v00-TEST-Eff_2023PbPb_1.4M.root",
     // "../Analyzer/hist-v00-TEST-Eff_2023PbPb_1.4M.root",
+    // "../Analyzer/hist-v00-TEST-Eff_2023PbPb_1.4M.root",
+    "/home/jun502s/HLTEffAnalyzer/2024HIRun/PbPbPrep/MuonEfficiency/Analyzer/hist-v00-TEST-Eff_2025OO_Coherent.root"
   };
 
   vector<TString> types = {
@@ -130,32 +137,32 @@ void drawtnpCompEffL3wrtL1(
     // "Eff/"+efftag2+"/den_Eff_"+L1tag+"_"+efftag2+"_RunAll",
   };
   vector<TString> types_str = {
-    "2023 PbPb L3Merged",
+     "2023 PbPb"+efftag,
     // "2023 PbPb L3SingleMu12",
     // "2023 PbPb L3SingleMu3_Open",
   };
 
   vector<TString> v_pts = {
     "genpt0",
-    "genpt2",
-    "genpt4",
-    "genpt6",
-    "genpt8",
-    "genpt10",
-    "genpt12",
-    "genpt15",
+    "genpt3",
+    "genpt5",
+    "genpt7",
+    // "genpt8",
+    // "genpt10",
+    // "genpt12",
+    // "genpt15",
     // "genpt53",
   };
 
   vector<TString> v_pts_str = {
     "p_{T}^{offline} > 0 GeV",
-    "p_{T}^{offline} > 2 GeV",
-    "p_{T}^{offline} > 4 GeV",
-    "p_{T}^{offline} > 6 GeV",
-    "p_{T}^{offline} > 8 GeV",
-    "p_{T}^{offline} > 10 GeV",
-    "p_{T}^{offline} > 12 GeV",
-    "p_{T}^{offline} > 15 GeV",
+    "p_{T}^{offline} > 3 GeV",
+    "p_{T}^{offline} > 5 GeV",
+    "p_{T}^{offline} > 7 GeV",
+    // "p_{T}^{offline} > 8 GeV",
+    // "p_{T}^{offline} > 10 GeV",
+    // "p_{T}^{offline} > 12 GeV",
+    // "p_{T}^{offline} > 15 GeV",
     // "p_{T}^{offline} > 53 GeV",
   };
 
